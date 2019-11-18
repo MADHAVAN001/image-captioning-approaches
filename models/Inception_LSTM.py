@@ -1,5 +1,6 @@
 import argparse
 import sys
+sys.path.append("..")
 
 import yaml
 from keras import Model
@@ -21,7 +22,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    sys.path.append("..")
 
     with open(args.config) as fp:
         cfg = yaml.load(fp)
@@ -32,8 +32,8 @@ if __name__ == "__main__":
     create_word_map(cfg)
     word_to_vec(cfg)
     encode_images(cfg, "inception", img_model, "train")
-    # encode_images(cfg, "inception", img_model, "validation")
-    # encode_images(cfg, "inception", img_model, "test")
+    encode_images(cfg, "inception", img_model, "validation")
+    encode_images(cfg, "inception", img_model, "test")
 
     MAX_LEN = 40
     EMBEDDING_DIM = 300
