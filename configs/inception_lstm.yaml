@@ -1,0 +1,22 @@
+model:
+    arch: inception_lstm
+data:
+    flickr:
+        dataset: flickr
+        base_directory: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\'
+        train_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.trainImages.txt'
+        test_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.testImages.txt'
+        validation_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.devImages.txt'
+        descriptions: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k.token.txt'
+        dataset_path: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k_Dataset'
+
+language:
+    max_sentence_length: 40
+    embedding_dimension: 300
+
+training:
+    batch_size: 40
+
+workspace:
+    directory: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\models'
+
