@@ -172,7 +172,7 @@ class FlickrDataGenerator(Sequence):
                     sequence = self.word_to_vec_map[line.strip()+"#"+str(i)]
 
                     for j in range(1, len(sequence)):
-                        input_word_sequence, output_word_sequence = sequence[:i], sequence[i]
+                        input_word_sequence, output_word_sequence = sequence[:j], sequence[j]
                         input_word_sequence = pad_sequences([input_word_sequence], maxlen=self.max_sentence_len)[0]
                         output_word_sequence = to_categorical([output_word_sequence], num_classes=self.vocab_size)[0]
 
