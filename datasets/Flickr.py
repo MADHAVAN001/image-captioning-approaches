@@ -148,7 +148,7 @@ class FlickrDataGenerator(Sequence):
         self.token_count = get_line_count(os.path.join(cfg["workspace"]["directory"], word_dictionary))
         self.word_to_vec_map = read_word_to_vec(cfg)
         self.data_list = retrieve_data_list_file(cfg, run_type)
-        self.image_encoding = np.load(unique_id + "_" + run_type + "_encoding.npy")
+        self.image_encoding = np.load(os.path.join(cfg["workspace"]["directory"], unique_id + "_" + run_type + "_encoding.npy"))
         self.previous_line_number = 0
         self.max_sentence_len = 40
         self.vocab_size = get_line_count(os.path.join(cfg["workspace"]["directory"], word_dictionary))
