@@ -1,11 +1,13 @@
 import argparse
 import sys
-sys.path.append("..")
+import os
 
 import yaml
 from keras import Model
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
+
+sys.path.append("..")
 
 from datasets.Flickr import tokenize_descriptions, create_word_map, word_to_vec, encode_images, get_line_count, \
     FlickrDataGenerator
@@ -38,7 +40,7 @@ if __name__ == "__main__":
     MAX_LEN = 40
     EMBEDDING_DIM = 300
     IMAGE_ENC_DIM = 300
-    vocab_size = get_line_count("word_dictionary.txt")
+    vocab_size = get_line_count(os.path.join(cfg["workspace"]["directory"], "word_dictionary.txt"))
 
     img_input = Input(shape=(2048,))
     img_enc = Dense(300, activation="relu")(img_input)
