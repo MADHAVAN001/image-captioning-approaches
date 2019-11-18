@@ -133,7 +133,7 @@ def encode_images(cfg, unique_id, model, run_type):
     model = encoder_model(model)
     enc_train = model.predict_generator(image_generator(cfg, data_list), steps=get_line_count(data_list), verbose=1)
     print("Number of encodings: " + str(len(enc_train)))
-    np.save(os.path.join(cfg["workspace"]["directory"], unique_id + "_" + run_type + "_encoding.npy", enc_train))
+    np.save(os.path.join(cfg["workspace"]["directory"], unique_id + "_" + run_type + "_encoding.npy"), enc_train)
 
 
 class FlickrDataGenerator(Sequence):
