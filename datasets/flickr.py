@@ -66,6 +66,16 @@ def read_word_dictionary(cfg):
     return word_dict
 
 
+def read_id_to_word_dictionary(cfg):
+    word_dict = dict()
+    with open(os.path.join(cfg["workspace"]["directory"], word_dictionary)) as f:
+        for line in f:
+            words = line.strip().split(",")
+            word_dict[words[1]] = words[0]
+
+    return word_dict
+
+
 def read_word_to_vec(cfg):
     word_dict = dict()
     with open(os.path.join(cfg["workspace"]["directory"], vector_encoding)) as f:
@@ -144,6 +154,8 @@ class FlickrDataGenerator(Sequence):
             self.batch_size = cfg["training"]["batch_size"]
         elif run_type == "validation":
             self.batch_size = cfg["validation"]["batch_size"]
+        else:
+            self.batch_size = 1000
 
         self.token_count = get_line_count(os.path.join(cfg["workspace"]["directory"], word_dictionary))
         self.word_to_vec_map = read_word_to_vec(cfg)

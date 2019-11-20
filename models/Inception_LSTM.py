@@ -1,6 +1,7 @@
 import argparse
-import sys
 import os
+import sys
+import language.decoder
 
 import yaml
 from keras import Model
@@ -9,8 +10,8 @@ from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVec
 
 sys.path.append("..")
 
-from datasets.Flickr import tokenize_descriptions, create_word_map, word_to_vec, encode_images, get_line_count, \
-    FlickrDataGenerator
+from datasets.flickr import tokenize_descriptions, create_word_map, word_to_vec, encode_images, get_line_count, \
+    FlickrDataGenerator, read_word_dictionary, read_id_to_word_dictionary
 
 
 if __name__ == "__main__":
@@ -57,5 +58,26 @@ if __name__ == "__main__":
 
     model.summary()
     training_generator = FlickrDataGenerator(cfg, "inception", "train")
+    validation_generator = FlickrDataGenerator(cfg, "inception", "validation")
+    test_generator = FlickrDataGenerator(cfg, "inception", "validation")
 
-    model.fit_generator(generator=training_generator)
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
+
+    model.save_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))
+    print("Saved model to disk")
+
+    f = open(os.path.join(cfg["workspace"]["directory"], "test_output.txt"), 'a')
+    for data in test_generator.__getitem__(0):
+        sentence = language.decoder.greedy_decoder(
+            model,
+            encode_images,
+            read_word_dictionary(cfg),
+            read_id_to_word_dictionary(cfg),
+            40)
+        f.write("".join(sentence) + "\n")
+
+
+
+
+
+
