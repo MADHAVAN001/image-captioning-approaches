@@ -5,7 +5,7 @@ sys.path.append("..")
 import language.decoder
 
 import yaml
-from keras import Model
+from keras import Model, models
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
 
@@ -64,19 +64,13 @@ if __name__ == "__main__":
 
     model.save_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))
     print("Saved model to disk")
-
+    model = models.load_model(os.path.join(cfg["workspace"]["directory"], "model.h5"))
     f = open(os.path.join(cfg["workspace"]["directory"], "test_output.txt"), 'a')
     for data in test_generator.__getitem__(0):
         sentence = language.decoder.greedy_decoder(
             model,
-            encode_images,
+            encode_images[0],
             read_word_dictionary(cfg),
             read_id_to_word_dictionary(cfg),
             40)
         f.write("".join(sentence) + "\n")
-
-
-
-
-
-

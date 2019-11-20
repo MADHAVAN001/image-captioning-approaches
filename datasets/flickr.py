@@ -61,7 +61,7 @@ def read_word_dictionary(cfg):
     with open(os.path.join(cfg["workspace"]["directory"], word_dictionary)) as f:
         for line in f:
             words = line.strip().split(",")
-            word_dict[words[0]] = words[1]
+            word_dict[words[0]] = int(words[1])
 
     return word_dict
 
@@ -71,7 +71,7 @@ def read_id_to_word_dictionary(cfg):
     with open(os.path.join(cfg["workspace"]["directory"], word_dictionary)) as f:
         for line in f:
             words = line.strip().split(",")
-            word_dict[words[1]] = words[0]
+            word_dict[int(words[1])] = words[0]
 
     return word_dict
 
@@ -155,7 +155,7 @@ class FlickrDataGenerator(Sequence):
         elif run_type == "validation":
             self.batch_size = cfg["validation"]["batch_size"]
         else:
-            self.batch_size = 1000
+            self.batch_size = 1
 
         self.token_count = get_line_count(os.path.join(cfg["workspace"]["directory"], word_dictionary))
         self.word_to_vec_map = read_word_to_vec(cfg)
@@ -185,8 +185,15 @@ class FlickrDataGenerator(Sequence):
 
                     for j in range(1, len(sequence)):
                         input_word_sequence, output_word_sequence = sequence[:j], sequence[j]
-                        input_word_sequence = pad_sequences([input_word_sequence], maxlen=self.max_sentence_len)[0]
-                        output_word_sequence = to_categorical([output_word_sequence], num_classes=self.vocab_size)[0]
+
+                        input_word_sequence = pad_sequences(
+                            [list(map(int, input_word_sequence))],
+                            maxlen=self.max_sentence_len
+                        )[0]
+                        output_word_sequence = to_categorical(
+                            [list(map(int, output_word_sequence))],
+                            num_classes=self.vocab_size
+                        )[0]
 
                         batch_images.append(self.image_encoding[index])
                         batch_word_sequences.append(input_word_sequence)
