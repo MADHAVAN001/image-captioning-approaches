@@ -17,6 +17,9 @@ language:
 training:
     batch_size: 40
 
+validation:
+    batch_size: 40
+
 workspace:
     directory: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\models'
 

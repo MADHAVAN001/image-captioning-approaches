@@ -1,14 +1,13 @@
 import argparse
 import os
 import sys
+sys.path.append("..")
 import language.decoder
 
 import yaml
 from keras import Model
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
-
-sys.path.append("..")
 
 from datasets.flickr import tokenize_descriptions, create_word_map, word_to_vec, encode_images, get_line_count, \
     FlickrDataGenerator, read_word_dictionary, read_id_to_word_dictionary
