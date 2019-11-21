@@ -77,4 +77,4 @@ if __name__ == "__main__":
                     read_word_dictionary(cfg),
                     read_id_to_word_dictionary(cfg),
                     40)
-        f.write("".join(sentence[1:-1]) + "\n")
+        f.write(" ".join(sentence[1:-1]) + "\n")
