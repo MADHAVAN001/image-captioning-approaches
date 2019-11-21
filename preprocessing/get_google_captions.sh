@@ -2,7 +2,7 @@
 
 echo "Starting to download Google Comceptual Captions metadata"
 
-${BASE_DIR} =/dataset/google-cc/
+BASE_DIR="/dataset/google-cc/"
 
 if [ ! -d "${BASE_DIR}" ]
 then
