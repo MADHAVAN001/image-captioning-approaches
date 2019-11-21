@@ -60,15 +60,16 @@ if __name__ == "__main__":
     validation_generator = FlickrDataGenerator(cfg, "inception", "validation")
     test_generator = FlickrDataGenerator(cfg, "inception", "test")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=5)
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=50)
 
-    model.save_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))
+    model.save_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
     print("Saved model to disk")
     
-    model.load_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))    
-    
+    model.load_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
+
+    length_test_file = get_line_count(cfg["data"]["flickr"]["test_images_file"])
     f = open(os.path.join(cfg["workspace"]["directory"], "test_output.txt"), 'a')
-    for i in range(1, 999):
+    for i in range(0, length_test_file):
         x, y = test_generator[i]
         sentence = language.decoder.greedy_decoder(
                     model,
@@ -76,4 +77,4 @@ if __name__ == "__main__":
                     read_word_dictionary(cfg),
                     read_id_to_word_dictionary(cfg),
                     40)
-        #f.write("".join(sentence) + "\n")
+        f.write("".join(sentence[1:-1]) + "\n")

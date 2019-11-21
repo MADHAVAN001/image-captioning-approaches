@@ -199,5 +199,6 @@ class FlickrDataGenerator(Sequence):
                         batch_images.append(self.image_encoding[index])
                         batch_word_sequences.append(input_word_sequence)
                         batch_output.append(output_word_sequence)
+                index += 1
 
         return [np.array(batch_images), np.array(batch_word_sequences)], np.array(batch_output)
