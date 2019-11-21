@@ -21,18 +21,21 @@ def download_image(url):
     image = cv2.resize(image, (299, 299), interpolation=cv2.INTER_AREA)
     cv2.imwrite(file_address, image)
 
-    yield url, uuid
+    return url, uuid
 
 
 def main():
 
     file = open(GOOGLE_CAPTIONS_FILE, 'r')
+    index_file = open(os.path.join(WORKSPACE, "index_file.txt"), 'a')
     count = 0
     for line in file:
-        download_image(line.strip().split(" ")[-1])
+        url, uuid = download_image(line.strip().split("\t")[-1])
+        index_file.write(url+","+uuid+"\n")
         count += 1
         if count >= NUM_SAMPLES:
             break
+
 
 if __name__ == "__main__":
     main()
