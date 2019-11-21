@@ -188,10 +188,11 @@ class FlickrDataGenerator(Sequence):
 
                         input_word_sequence = pad_sequences(
                             [list(map(int, input_word_sequence))],
-                            maxlen=self.max_sentence_len
+                            maxlen=self.max_sentence_len,
+                            padding='post'
                         )[0]
                         output_word_sequence = to_categorical(
-                            [list(map(int, output_word_sequence))],
+                            [int(output_word_sequence)],
                             num_classes=self.vocab_size
                         )[0]
 

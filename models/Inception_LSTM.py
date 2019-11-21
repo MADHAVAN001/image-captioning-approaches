@@ -19,7 +19,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm.yaml",
+        default="../configs/inception_lstm_server.yaml",
         help="Configuration file to use",
     )
 
@@ -58,19 +58,22 @@ if __name__ == "__main__":
     model.summary()
     training_generator = FlickrDataGenerator(cfg, "inception", "train")
     validation_generator = FlickrDataGenerator(cfg, "inception", "validation")
-    test_generator = FlickrDataGenerator(cfg, "inception", "validation")
+    test_generator = FlickrDataGenerator(cfg, "inception", "test")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=5)
 
     model.save_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))
     print("Saved model to disk")
-    model = models.load_model(os.path.join(cfg["workspace"]["directory"], "model.h5"))
+    
+    model.load_weights(os.path.join(cfg["workspace"]["directory"], "model.h5"))    
+    
     f = open(os.path.join(cfg["workspace"]["directory"], "test_output.txt"), 'a')
-    for data in test_generator.__getitem__(0):
+    for i in range(1, 999):
+        x, y = test_generator[i]
         sentence = language.decoder.greedy_decoder(
-            model,
-            encode_images[0],
-            read_word_dictionary(cfg),
-            read_id_to_word_dictionary(cfg),
-            40)
-        f.write("".join(sentence) + "\n")
+                    model,
+                    x[0][0],
+                    read_word_dictionary(cfg),
+                    read_id_to_word_dictionary(cfg),
+                    40)
+        #f.write("".join(sentence) + "\n")
