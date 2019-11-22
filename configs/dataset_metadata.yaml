@@ -1,0 +1,17 @@
+data:
+    flickr:
+        dataset: flickr
+        base_directory: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\'
+        train_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.trainImages.txt'
+        test_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.testImages.txt'
+        validation_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.devImages.txt'
+        descriptions: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k.token.txt'
+        dataset_path: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k_Dataset'
+    googlecc:
+        dataset: googlecc
+        index_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.trainImages.txt'
+        train_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.trainImages.txt'
+        test_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.testImages.txt'
+        validation_images_file: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr_8k.devImages.txt'
+        descriptions: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k.token.txt'
+        dataset_path: 'C:\Users\smadh\Desktop\Assignments\big-data-analytics\data\flickr\Flickr8k_Dataset'

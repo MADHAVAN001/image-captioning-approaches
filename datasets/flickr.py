@@ -5,109 +5,14 @@ import os
 import cv2
 from cnn.Encoder import encoder_model
 import itertools
+import yaml
+
+from datasets.common import tokenize_descriptions, read_word_dictionary, vector_encode_descriptions, create_word_map,\
+    read_encoded_descriptions, read_id_to_word_dictionary
 
 tokenized_descriptions = 'tokenized_descriptions.txt'
 word_dictionary = 'word_dictionary.txt'
 vector_encoding = 'word_to_vector_encoding.txt'
-
-
-def create_word_map(cfg):
-    if os.path.exists(os.path.join(cfg["workspace"]["directory"], word_dictionary)):
-        print("Word map already exists in workspace. Will be reused.")
-        return
-
-    print("Word map not found. Generating....")
-
-    words_list = []
-    words_to_id = {}
-
-    with open(os.path.join(cfg["workspace"]["directory"], tokenized_descriptions), 'r') as file:
-        for line in file:
-            tokens = line.strip().split(",")
-            words_list.extend(tokens[1:])
-
-    # remove duplicate words
-    words_list = list(set(words_list))
-
-    # sorting the words
-    words_list = sorted(words_list)
-    for i in range(len(words_list)):
-        words_to_id[words_list[i]] = i
-
-    with open(os.path.join(cfg["workspace"]["directory"], word_dictionary), 'w') as f:
-        [f.write('{0},{1}'.format(key, value) + "\n") for key, value in words_to_id.items()]
-
-
-def tokenize_descriptions(cfg):
-    if os.path.exists(os.path.join(cfg["workspace"]["directory"], tokenized_descriptions)):
-        print("Tokenized descriptions found. Will not be generated.")
-        return
-
-    print("Generating tokenized descriptions")
-    f = open(os.path.join(cfg["workspace"]["directory"], tokenized_descriptions), 'a')
-    with open(cfg["data"]["flickr"]["descriptions"], 'r') as file:
-        for line in file:
-            if line.strip():
-                sequence = line.strip().split()
-                sequence.insert(1, '<START>')
-                sequence.append('<END>')
-                f.write(",".join(sequence)+"\n")
-    f.close()
-    print("Finished generating tokenized descriptions")
-
-
-def read_word_dictionary(cfg):
-    word_dict = dict()
-    with open(os.path.join(cfg["workspace"]["directory"], word_dictionary)) as f:
-        for line in f:
-            words = line.strip().split(",")
-            word_dict[words[0]] = int(words[1])
-
-    return word_dict
-
-
-def read_id_to_word_dictionary(cfg):
-    word_dict = dict()
-    with open(os.path.join(cfg["workspace"]["directory"], word_dictionary)) as f:
-        for line in f:
-            words = line.strip().split(",")
-            word_dict[int(words[1])] = words[0]
-
-    return word_dict
-
-
-def read_word_to_vec(cfg):
-    word_dict = dict()
-    with open(os.path.join(cfg["workspace"]["directory"], vector_encoding)) as f:
-        for line in f:
-            elements = line.strip().split(",")
-            word_dict[elements[0]] = elements[1:]
-
-    return word_dict
-
-
-def word_to_vec(cfg):
-    if os.path.exists(os.path.join(cfg["workspace"]["directory"], vector_encoding)):
-        print("Vector encoding found. Will not be generated.")
-        return
-
-    print("Generating word to vector encoding")
-
-    word_map = read_word_dictionary(cfg)
-    f = open(os.path.join(cfg["workspace"]["directory"], vector_encoding), 'a')
-    with open(os.path.join(cfg["workspace"]["directory"], tokenized_descriptions), 'r') as file:
-        for line in file:
-            if line.strip():
-                sequences = line.strip().split(",")
-                vector_sequence = list()
-                vector_sequence.append(sequences[0])
-
-                for word in sequences[1:]:
-                    vector_sequence.append(word_map[word])
-
-                f.write(",".join(vector_sequence) + "\n")
-    f.close()
-    print("Finished generating word to vector encoding")
 
 
 def image_generator(cfg, data_list):
@@ -119,12 +24,17 @@ def image_generator(cfg, data_list):
 
 
 def retrieve_data_list_file(cfg, run_type):
+    dataset_metadata = "../configs/dataset_metadata.yaml"
+
+    with open(dataset_metadata) as fp:
+        dataset_cfg = yaml.load(fp)
+
     if run_type == "train":
-        data_list = cfg["data"]["flickr"]["train_images_file"]
+        data_list = dataset_cfg["data"]["flickr"]["train_images_file"]
     elif run_type is "validation":
-        data_list = cfg["data"]["flickr"]["validation_images_file"]
+        data_list = dataset_cfg["data"]["flickr"]["validation_images_file"]
     else:
-        data_list = cfg["data"]["flickr"]["test_images_file"]
+        data_list = dataset_cfg["data"]["flickr"]["test_images_file"]
 
     return data_list
 
@@ -146,9 +56,44 @@ def encode_images(cfg, unique_id, model, run_type):
     np.save(os.path.join(cfg["workspace"]["directory"], unique_id + "_" + run_type + "_encoding.npy"), enc_train)
 
 
+class PreProcessing:
+
+    def __init__(self, cfg):
+        dataset_metadata = "../configs/dataset_metadata.yaml"
+
+        with open(dataset_metadata) as fp:
+            dataset_cfg = yaml.load(fp)
+
+        self.workspace_dir = cfg["workspace"]["directory"]
+        self.tokenized_descriptions_file_path = os.path.join(cfg["workspace"]["directory"], tokenized_descriptions)
+        self.word_dictionary_file_path = os.path.join(cfg["workspace"]["directory"], word_dictionary)
+        self.vector_encoding_file_path = os.path.join(cfg["workspace"]["directory"], vector_encoding)
+        self.cfg = cfg
+
+        tokenize_descriptions(dataset_cfg["data"]["flickr"]["descriptions"], self.tokenized_descriptions_file_path)
+        create_word_map(self.tokenized_descriptions_file_path, self.word_dictionary_file_path)
+
+        word_map = read_word_dictionary(self.word_dictionary_file_path)
+        vector_encode_descriptions(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, word_map)
+
+    def get_word_dictionary(self):
+        return read_encoded_descriptions(self.word_dictionary_file_path)
+
+    def get_id_dictionary(self):
+        return read_id_to_word_dictionary(self.word_dictionary_file_path)
+
+    def get_vector_encodings(self):
+        return read_encoded_descriptions(self.vector_encoding_file_path)
+
+    def get_keras_generators(self, unique_id):
+        return FlickrDataGenerator(self.cfg, unique_id, "train", self.vector_encoding_file_path), \
+               FlickrDataGenerator(self.cfg, unique_id, "validation", self.vector_encoding_file_path),\
+               FlickrDataGenerator(self.cfg, unique_id, "test", self.vector_encoding_file_path)
+
+
 class FlickrDataGenerator(Sequence):
 
-    def __init__(self, cfg, unique_id, run_type):
+    def __init__(self, cfg, unique_id, run_type, vector_encoding_file_path):
 
         if run_type == "train":
             self.batch_size = cfg["training"]["batch_size"]
@@ -158,7 +103,7 @@ class FlickrDataGenerator(Sequence):
             self.batch_size = 1
 
         self.token_count = get_line_count(os.path.join(cfg["workspace"]["directory"], word_dictionary))
-        self.word_to_vec_map = read_word_to_vec(cfg)
+        self.word_to_vec_map = read_encoded_descriptions(vector_encoding_file_path)
         self.data_list = retrieve_data_list_file(cfg, run_type)
         self.image_encoding = np.load(os.path.join(cfg["workspace"]["directory"], unique_id + "_" + run_type + "_encoding.npy"))
         self.previous_line_number = 0

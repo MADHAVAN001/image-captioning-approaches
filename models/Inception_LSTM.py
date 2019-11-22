@@ -9,8 +9,10 @@ from keras import Model, models
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
 
-from datasets.flickr import tokenize_descriptions, create_word_map, word_to_vec, encode_images, get_line_count, \
-    FlickrDataGenerator, read_word_dictionary, read_id_to_word_dictionary
+from datasets.flickr import tokenize_descriptions, encode_images, get_line_count, \
+    FlickrDataGenerator
+
+import datasets.flickr
 
 
 if __name__ == "__main__":
@@ -19,7 +21,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm_server.yaml",
+        default="../configs/inception_lstm.yaml",
         help="Configuration file to use",
     )
 
@@ -30,12 +32,11 @@ if __name__ == "__main__":
 
     img_model = InceptionV3(weights='imagenet')
 
-    tokenize_descriptions(cfg)
-    create_word_map(cfg)
-    word_to_vec(cfg)
     encode_images(cfg, "inception", img_model, "train")
     encode_images(cfg, "inception", img_model, "validation")
     encode_images(cfg, "inception", img_model, "test")
+
+    dataset_preprocessor = datasets.flickr.PreProcessing(cfg)
 
     MAX_LEN = 40
     EMBEDDING_DIM = 300
@@ -56,11 +57,10 @@ if __name__ == "__main__":
     model.compile(loss='categorical_crossentropy', optimizer="RMSProp", metrics=['accuracy'])
 
     model.summary()
-    training_generator = FlickrDataGenerator(cfg, "inception", "train")
-    validation_generator = FlickrDataGenerator(cfg, "inception", "validation")
-    test_generator = FlickrDataGenerator(cfg, "inception", "test")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=50)
+    training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
+
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
 
     model.save_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
     print("Saved model to disk")
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         sentence = language.decoder.greedy_decoder(
                     model,
                     x[0][0],
-                    read_word_dictionary(cfg),
-                    read_id_to_word_dictionary(cfg),
+                    dataset_preprocessor.get_word_dictionary(),
+                    dataset_preprocessor.get_id_dictionary(),
                     40)
         f.write(" ".join(sentence[1:-1]) + "\n")
