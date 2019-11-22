@@ -15,19 +15,26 @@ word_dictionary = 'word_dictionary.txt'
 vector_encoding = 'word_to_vector_encoding.txt'
 
 
+def get_dataset_metadata_cfg():
+    dataset_metadata = "../configs/dataset_metadata.yaml"
+
+    with open(dataset_metadata) as fp:
+        dataset_cfg = yaml.load(fp)
+
+    return dataset_cfg
+
+
 def image_generator(cfg, data_list):
+    dataset_metadata = get_dataset_metadata_cfg()
     with open(data_list, 'r') as file:
         for line in file:
-            image = cv2.imread(os.path.join(cfg["data"]["flickr"]["dataset_path"], line.strip()))
+            image = cv2.imread(os.path.join(dataset_metadata["data"]["flickr"]["dataset_path"], line.strip()))
             image = np.expand_dims(np.asarray(cv2.resize(image, (299, 299))) / 255.0, axis=0)
             yield image
 
 
 def retrieve_data_list_file(cfg, run_type):
-    dataset_metadata = "../configs/dataset_metadata.yaml"
-
-    with open(dataset_metadata) as fp:
-        dataset_cfg = yaml.load(fp)
+    dataset_metadata = get_dataset_metadata_cfg()
 
     if run_type == "train":
         data_list = dataset_cfg["data"]["flickr"]["train_images_file"]
@@ -59,10 +66,7 @@ def encode_images(cfg, unique_id, model, run_type):
 class PreProcessing:
 
     def __init__(self, cfg):
-        dataset_metadata = "../configs/dataset_metadata.yaml"
-
-        with open(dataset_metadata) as fp:
-            dataset_cfg = yaml.load(fp)
+        dataset_cfg = get_dataset_metadata_cfg()
 
         self.workspace_dir = cfg["workspace"]["directory"]
         self.tokenized_descriptions_file_path = os.path.join(cfg["workspace"]["directory"], tokenized_descriptions)
