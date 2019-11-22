@@ -77,7 +77,7 @@ class PreProcessing:
         vector_encode_descriptions(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, word_map)
 
     def get_word_dictionary(self):
-        return read_encoded_descriptions(self.word_dictionary_file_path)
+        return read_word_dictionary(self.word_dictionary_file_path)
 
     def get_id_dictionary(self):
         return read_id_to_word_dictionary(self.word_dictionary_file_path)
