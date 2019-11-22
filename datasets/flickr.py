@@ -1,27 +1,18 @@
-import numpy as np
-from keras.utils import Sequence, to_categorical
-from keras.preprocessing.sequence import pad_sequences
-import os
-import cv2
-from cnn.Encoder import encoder_model
 import itertools
-import yaml
+import os
 
-from datasets.common import tokenize_descriptions, read_word_dictionary, vector_encode_descriptions, create_word_map,\
-    read_encoded_descriptions, read_id_to_word_dictionary
+import cv2
+import numpy as np
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import Sequence, to_categorical
+
+from cnn.Encoder import encoder_model
+from datasets.common import tokenize_descriptions, read_word_dictionary, vector_encode_descriptions, create_word_map, \
+    read_encoded_descriptions, read_id_to_word_dictionary, get_dataset_metadata_cfg
 
 tokenized_descriptions = 'tokenized_descriptions.txt'
 word_dictionary = 'word_dictionary.txt'
 vector_encoding = 'word_to_vector_encoding.txt'
-
-
-def get_dataset_metadata_cfg():
-    dataset_metadata = "../configs/dataset_metadata.yaml"
-
-    with open(dataset_metadata) as fp:
-        dataset_cfg = yaml.load(fp)
-
-    return dataset_cfg
 
 
 def image_generator(cfg, data_list):
@@ -69,9 +60,9 @@ class PreProcessing:
         dataset_cfg = get_dataset_metadata_cfg()
 
         self.workspace_dir = cfg["workspace"]["directory"]
-        self.tokenized_descriptions_file_path = os.path.join(cfg["workspace"]["directory"], tokenized_descriptions)
-        self.word_dictionary_file_path = os.path.join(cfg["workspace"]["directory"], word_dictionary)
-        self.vector_encoding_file_path = os.path.join(cfg["workspace"]["directory"], vector_encoding)
+        self.tokenized_descriptions_file_path = os.path.join(self.workspace_dir, tokenized_descriptions)
+        self.word_dictionary_file_path = os.path.join(self.workspace_dir, word_dictionary)
+        self.vector_encoding_file_path = os.path.join(self.workspace_dir, vector_encoding)
         self.cfg = cfg
 
         tokenize_descriptions(dataset_cfg["data"]["flickr"]["descriptions"], self.tokenized_descriptions_file_path)

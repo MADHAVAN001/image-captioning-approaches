@@ -1,4 +1,5 @@
 import os
+import yaml
 
 
 def tokenize_descriptions(input_file_path, output_file_path):
@@ -123,3 +124,12 @@ def read_encoded_descriptions(vector_encoding_file_path):
             vector_encoding_map[elements[0]] = elements[1:]
 
     return vector_encoding_map
+
+
+def get_dataset_metadata_cfg():
+    dataset_metadata = "../configs/dataset_metadata.yaml"
+
+    with open(dataset_metadata) as fp:
+        dataset_cfg = yaml.load(fp)
+
+    return dataset_cfg
