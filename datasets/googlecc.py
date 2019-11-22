@@ -38,6 +38,11 @@ class PreProcessing:
         self.dataset_cfg = get_dataset_metadata_cfg()
 
         self.workspace_dir = os.path.join(cfg["workspace"]["directory"], "google")
+
+        # Create workspace directory if it does not exist
+        if not os.path.exists(self.workspace_dir):
+            os.makedirs(self.workspace_dir)
+
         self.tokenized_descriptions_file_path = os.path.join(self.workspace_dir, tokenized_descriptions)
         self.word_dictionary_file_path = os.path.join(self.workspace_dir, word_dictionary)
         self.vector_encoding_file_path = os.path.join(self.workspace_dir, vector_encoding)
