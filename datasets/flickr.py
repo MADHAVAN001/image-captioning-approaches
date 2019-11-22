@@ -34,7 +34,7 @@ def image_generator(cfg, data_list):
 
 
 def retrieve_data_list_file(cfg, run_type):
-    dataset_metadata = get_dataset_metadata_cfg()
+    dataset_cfg = get_dataset_metadata_cfg()
 
     if run_type == "train":
         data_list = dataset_cfg["data"]["flickr"]["train_images_file"]
