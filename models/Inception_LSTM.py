@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm.yaml",
+        default="../configs/inception_lstm_server.yaml",
         help="Configuration file to use",
     )
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=20)
 
     model.save_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
     print("Saved model to disk")

@@ -20,7 +20,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm.yaml",
+        default="../configs/inception_lstm_server.yaml",
         help="Configuration file to use",
     )
 
@@ -30,6 +30,8 @@ if __name__ == "__main__":
         cfg = yaml.load(fp)
 
     img_model = InceptionV3(weights='imagenet')
+    
+    dataset_cfg = get_dataset_metadata_cfg()
 
     dataset_preprocessor = PreProcessing(cfg, "inception")
     dataset_preprocessor.run_one_time_encoding(img_model)
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     MAX_LEN = 40
     EMBEDDING_DIM = 300
     IMAGE_ENC_DIM = 300
-    vocab_size = get_line_count(os.path.join(cfg["workspace"]["directory"], "word_dictionary.txt"))
+    vocab_size = get_line_count(os.path.join(workspace_dir, "word_dictionary.txt"))
 
     img_input = Input(shape=(2048,))
     img_enc = Dense(300, activation="relu")(img_input)
@@ -59,7 +61,7 @@ if __name__ == "__main__":
 
     training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
+    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=100)
 
     model.save_weights(os.path.join(workspace_dir, cfg["model"]["arch"] + "_model.h5"))
     print("Saved model to disk")
