@@ -1,5 +1,6 @@
 import concurrent.futures
 import os
+import sys
 import urllib.error
 import urllib.request
 import uuid
@@ -7,6 +8,7 @@ import uuid
 import cv2
 import numpy as np
 
+sys.path.append("..")
 from preprocessing.utils import make_directories
 
 IMAGE_FORMAT = ".jpg"
@@ -67,7 +69,7 @@ def main():
                 print("Executor Service exception..!")
             else:
                 if url is not None:
-                    index_file.write(url + "," + file_name + "\n")
+                    index_file.write(url + " " + file_name + "\n")
 
 
 if __name__ == "__main__":
