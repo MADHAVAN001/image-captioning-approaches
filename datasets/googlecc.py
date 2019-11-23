@@ -37,11 +37,7 @@ class PreProcessing:
     def __init__(self, cfg, unique_id):
         self.dataset_cfg = get_dataset_metadata_cfg()
 
-        self.workspace_dir = os.path.join(cfg["workspace"]["directory"], "google")
-
-        # Create workspace directory if it does not exist
-        if not os.path.exists(self.workspace_dir):
-            os.makedirs(self.workspace_dir)
+        self.workspace_dir = os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"])
 
         self.tokenized_descriptions_file_path = os.path.join(self.workspace_dir, tokenized_descriptions)
         self.word_dictionary_file_path = os.path.join(self.workspace_dir, word_dictionary)
@@ -54,6 +50,7 @@ class PreProcessing:
 
         # Prepare the dataset processing original descriptions to new descriptions
         self.prepare_dataset()
+        self.train_test_split()
 
         tokenize_descriptions(self.processed_descriptions_file_path, self.tokenized_descriptions_file_path)
         create_word_map(self.tokenized_descriptions_file_path, self.word_dictionary_file_path)
@@ -108,7 +105,6 @@ class PreProcessing:
         self.encode_images(self.unique_id, model, "train")
         self.encode_images(self.unique_id, model, "validation")
         self.encode_images(self.unique_id, model, "test")
-        self.train_test_split()
 
     def encode_images(self, unique_id, model, run_type):
         if os.path.exists(self.calculate_image_encoding_file_path(unique_id, run_type)):

@@ -7,10 +7,12 @@ import uuid
 import cv2
 import numpy as np
 
-WORKSPACE = "/dataset/google-cc/"
+from preprocessing.utils import make_directories
+
 IMAGE_FORMAT = ".jpg"
 GOOGLE_CAPTIONS_FILE = "/dataset/google-cc/train_GCC-training.tsv"
-NUM_SAMPLES = 110000
+NUM_SAMPLES = 10000
+WORKSPACE = "/dataset/google-cc/" + "10k" + "/images"
 
 
 def download_image(url):
@@ -43,11 +45,15 @@ def download_image(url):
 
 def main():
     file = open(GOOGLE_CAPTIONS_FILE, 'r')
+
+    # Ensure workspace directory exists
+    make_directories(WORKSPACE)
+
     index_file = open(os.path.join(WORKSPACE, "index_file.txt"), 'a')
     count = 0
 
     future_list = list()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
         for line in file:
             count += 1
             future_list.append(executor.submit(download_image, line.strip().split("\t")[-1]))

@@ -1,14 +1,7 @@
 model:
     arch: inception_lstm
-data:
-    flickr:
-        dataset: flickr
-        base_directory: '/flickr_8k'
-        train_images_file: '/flickr_8k/Flickr_8k.trainImages.txt'
-        test_images_file: '/flickr_8k/Flickr_8k.testImages.txt'
-        validation_images_file: '/flickr_8k/Flickr_8k.devImages.txt'
-        descriptions: '/flickr_8k/Flickr8k.token.txt'
-        dataset_path: '/flickr_8k/Flicker8k_Dataset'
+dataset:
+    name: google-cc-10k
 
 language:
     max_sentence_length: 40
@@ -16,9 +9,10 @@ language:
 
 training:
     batch_size: 40
+    epochs: 40
 
 validation:
     batch_size: 40
 
 workspace:
-    directory: '/workspace/flickr_8k'
+    directory: '/workspace/'
