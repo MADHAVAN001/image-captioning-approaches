@@ -194,7 +194,10 @@ class GoogleDataGenerator(Sequence):
             index = idx*self.batch_size
             for line in result:
 
-                sequence = self.word_to_vec_map[line.strip()]
+                try:
+                    sequence = self.word_to_vec_map[line.strip()]
+                except:
+                    continue
 
                 for j in range(1, len(sequence)):
                     input_word_sequence, output_word_sequence = sequence[:j], sequence[j]

@@ -100,6 +100,8 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
 
     print("Generating word to vector encoding")
 
+    restricted_word_set = restricted_set(word_map)
+
     f = open(vector_encoding_file_path, 'a')
     with open(tokenized_descriptions_file_path, 'r') as file:
         for line in file:
@@ -109,11 +111,19 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
                 vector_sequence.append(sequences[0])
 
                 for word in sequences[1:]:
-                    vector_sequence.append(str(word_map[word]))
+                    if word not in restricted_word_set:
+                        vector_sequence.append(str(word_map[word]))
 
                 f.write(",".join(vector_sequence) + "\n")
     f.close()
     print("Finished generating word to vector encoding")
+
+
+def restricted_set(word_map, threshold_frequency=5):
+    restricted_word_set = set()
+    restricted_word_set.add('')
+
+    return restricted_word_set
 
 
 def read_encoded_descriptions(vector_encoding_file_path):
