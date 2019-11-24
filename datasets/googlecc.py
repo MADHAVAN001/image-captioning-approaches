@@ -136,7 +136,7 @@ class PreProcessing:
         indexes = list()
         with open(self.index_file, 'r') as file:
             for line in file:
-                values = line.strip().split(",")
+                values = line.strip().split(" ")
                 indexes.append(values[1])
 
         if not os.path.exists(retrieve_data_list_file("train")):
