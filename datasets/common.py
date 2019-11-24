@@ -109,7 +109,7 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
                 vector_sequence.append(sequences[0])
 
                 for word in sequences[1:]:
-                    vector_sequence.append(word_map[word])
+                    vector_sequence.append(str(word_map[word]))
 
                 f.write(",".join(vector_sequence) + "\n")
     f.close()

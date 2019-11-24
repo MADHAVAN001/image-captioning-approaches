@@ -89,17 +89,17 @@ class PreProcessing:
         indexes = dict()
         with open(self.index_file, 'r') as file:
             for line in file:
-                values = line.strip().split(",")
+                values = line.strip().split(" ")
                 indexes[values[0]] = values[1]
 
         index_token_file = open(self.processed_descriptions_file_path, 'a')
         with open(self.dataset_cfg["data"]["googlecc"]["descriptions"]) as description_file:
             for line in description_file:
-                values = line.strip().split(" ")
+                values = line.strip().split("\t")
 
                 if values[-1] in indexes.keys():
-                    values.insert(0, indexes[values[-1]])
-                    index_token_file.write(" ".join(values[:-1]))
+                    values.insert(0, indexes[values[-1]]+".jpg")
+                    index_token_file.write(" ".join(values[:-1]) + "\n")
 
     def run_one_time_encoding(self, model):
         self.encode_images(self.unique_id, model, "train")
