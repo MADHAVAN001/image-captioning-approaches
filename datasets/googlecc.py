@@ -8,7 +8,6 @@ import itertools
 from datasets.common import get_dataset_metadata_cfg, tokenize_descriptions, vector_encode_descriptions, \
     read_encoded_descriptions, read_id_to_word_dictionary, read_word_dictionary, create_word_map
 
-
 tokenized_descriptions = 'tokenized_descriptions.txt'
 word_dictionary = 'word_dictionary.txt'
 vector_encoding = 'word_to_vector_encoding.txt'
@@ -68,18 +67,30 @@ class PreProcessing:
         return read_encoded_descriptions(self.vector_encoding_file_path)
 
     def get_keras_generators(self, unique_id):
-        return GoogleDataGenerator(self.cfg, "train",
-                                   self.vector_encoding_file_path,
-                                   self.calculate_image_encoding_file_path(unique_id, "train"),
-                                   self.word_dictionary_file_path), \
-               GoogleDataGenerator(self.cfg, "validation",
-                                   self.vector_encoding_file_path,
-                                   self.calculate_image_encoding_file_path(unique_id, "validation"),
-                                   self.word_dictionary_file_path), \
-               GoogleDataGenerator(self.cfg, "test",
-                                   self.vector_encoding_file_path,
-                                   self.calculate_image_encoding_file_path(unique_id, "test"),
-                                   self.word_dictionary_file_path)
+        return EncodedGoogleDataGenerator(self.cfg, "train", self.vector_encoding_file_path,
+                                          self.calculate_image_encoding_file_path(unique_id, "train"),
+                                          self.word_dictionary_file_path), \
+               EncodedGoogleDataGenerator(self.cfg, "validation", self.vector_encoding_file_path,
+                                          self.calculate_image_encoding_file_path(unique_id, "validation"),
+                                          self.word_dictionary_file_path), \
+               EncodedGoogleDataGenerator(self.cfg, "test",
+                                          self.vector_encoding_file_path,
+                                          self.calculate_image_encoding_file_path(unique_id, "test"),
+                                          self.word_dictionary_file_path)
+
+    def get_simple_keras_generators(self):
+        return ImageGoogleDataGenerator(self.cfg, "train",
+                                        self.vector_encoding_file_path,
+                                        self.word_dictionary_file_path,
+                                        self.dataset_path), \
+               ImageGoogleDataGenerator(self.cfg, "validation",
+                                        self.vector_encoding_file_path,
+                                        self.word_dictionary_file_path,
+                                        self.dataset_path), \
+               ImageGoogleDataGenerator(self.cfg, "test",
+                                        self.vector_encoding_file_path,
+                                        self.word_dictionary_file_path,
+                                        self.dataset_path)
 
     def prepare_dataset(self):
         if os.path.exists(self.processed_descriptions_file_path):
@@ -98,7 +109,7 @@ class PreProcessing:
                 values = line.strip().split("\t")
 
                 if values[-1] in indexes.keys():
-                    values.insert(0, indexes[values[-1]]+".jpg")
+                    values.insert(0, indexes[values[-1]] + ".jpg")
                     index_token_file.write(" ".join(values[:-1]) + "\n")
 
     def run_one_time_encoding(self, model):
@@ -143,25 +154,25 @@ class PreProcessing:
             print("Creating train split")
 
             f = open(retrieve_data_list_file("train"), 'a')
-            for index in indexes[:int(train_split*len(indexes))]:
-                f.write(index+".jpg\n")
+            for index in indexes[:int(train_split * len(indexes))]:
+                f.write(index + ".jpg\n")
 
         if not os.path.exists(retrieve_data_list_file("validation")):
             print("Creating validation split")
 
             f = open(retrieve_data_list_file("validation"), 'a')
-            for index in indexes[int(train_split*len(indexes)):int((train_split+validation_split) * len(indexes))]:
+            for index in indexes[int(train_split * len(indexes)):int((train_split + validation_split) * len(indexes))]:
                 f.write(index + ".jpg\n")
 
         if not os.path.exists(retrieve_data_list_file("test")):
             print("Creating test split")
 
             f = open(retrieve_data_list_file("test"), 'a')
-            for index in indexes[int((train_split+validation_split) * len(indexes)):]:
+            for index in indexes[int((train_split + validation_split) * len(indexes)):]:
                 f.write(index + ".jpg\n")
 
 
-class GoogleDataGenerator(Sequence):
+class EncodedGoogleDataGenerator(Sequence):
 
     def __init__(self, cfg, run_type, vector_encoding_file_path, image_encoding_file_path, word_dictionary_file_path):
 
@@ -180,7 +191,7 @@ class GoogleDataGenerator(Sequence):
         self.vocab_size = get_line_count(word_dictionary_file_path)
 
     def __len__(self):
-        return int(np.ceil(get_line_count(self.data_list)/float(self.batch_size)))
+        return int(np.ceil(get_line_count(self.data_list) / float(self.batch_size)))
 
     def __getitem__(self, idx):
 
@@ -189,9 +200,9 @@ class GoogleDataGenerator(Sequence):
         batch_output = list()
 
         with open(self.data_list) as f:
-            result = itertools.islice(f, idx*self.batch_size, (idx+1)*self.batch_size)
+            result = itertools.islice(f, idx * self.batch_size, (idx + 1) * self.batch_size)
 
-            index = idx*self.batch_size
+            index = idx * self.batch_size
             for line in result:
 
                 try:
@@ -213,6 +224,71 @@ class GoogleDataGenerator(Sequence):
                     )[0]
 
                     batch_images.append(self.image_encoding[index])
+                    batch_word_sequences.append(input_word_sequence)
+                    batch_output.append(output_word_sequence)
+                index += 1
+
+        return [np.array(batch_images), np.array(batch_word_sequences)], np.array(batch_output)
+
+
+class ImageGoogleDataGenerator(Sequence):
+
+    def __init__(self, cfg, run_type, vector_encoding_file_path, word_dictionary_file_path, dataset_directory):
+
+        if run_type == "train":
+            self.batch_size = cfg["training"]["batch_size"]
+        elif run_type == "validation":
+            self.batch_size = cfg["validation"]["batch_size"]
+        else:
+            self.batch_size = 1
+
+        self.word_to_vec_map = read_encoded_descriptions(vector_encoding_file_path)
+        self.data_list = retrieve_data_list_file(run_type)
+        self.previous_line_number = 0
+        self.max_sentence_len = 40
+        self.vocab_size = get_line_count(word_dictionary_file_path)
+        self.dataset_directory = dataset_directory
+
+    def __len__(self):
+        return int(np.ceil(get_line_count(self.data_list) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+
+        batch_images = list()
+        batch_word_sequences = list()
+        batch_output = list()
+
+        image_file_names = [line.rstrip('\n') for line in open(self.data_list)]
+
+        with open(self.data_list) as f:
+            result = itertools.islice(f, idx * self.batch_size, (idx + 1) * self.batch_size)
+
+            index = idx * self.batch_size
+            for line in result:
+
+                try:
+                    sequence = self.word_to_vec_map[line.strip()]
+                except:
+                    continue
+
+                for j in range(1, len(sequence)):
+                    input_word_sequence, output_word_sequence = sequence[:j], sequence[j]
+
+                    input_word_sequence = pad_sequences(
+                        [list(map(int, input_word_sequence))],
+                        maxlen=self.max_sentence_len,
+                        padding='post'
+                    )[0]
+                    output_word_sequence = to_categorical(
+                        [int(output_word_sequence)],
+                        num_classes=self.vocab_size
+                    )[0]
+
+                    file_path = os.path.join(self.dataset_directory, image_file_names[index])
+                    image = cv2.imread(file_path)
+                    image = np.expand_dims(np.asarray(cv2.resize(image, (299, 299))) / 255.0, axis=0)
+
+                    batch_images.append(image)
                     batch_word_sequences.append(input_word_sequence)
                     batch_output.append(output_word_sequence)
                 index += 1
