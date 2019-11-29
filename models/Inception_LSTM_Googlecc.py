@@ -13,7 +13,7 @@ from datasets.googlecc import PreProcessing, get_line_count
 from datasets.common import get_dataset_metadata_cfg
 from preprocessing import utils
 from keras.callbacks import ModelCheckpoint
-
+from keras.callbacks import CSVLogger
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="config")
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm.yaml",
+        default="../configs/inception_lstm_preprocessed1.yaml",
         help="Configuration file to use",
     )
 
@@ -68,5 +68,7 @@ if __name__ == "__main__":
                                  verbose=1,
                                  save_best_only=True)
 
+    csv_logger = CSVLogger(os.path.join(model_workspace_dir, 'training.log'), append=True)
+
     model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=100,
-                        callbacks=[checkpoint])
+                        callbacks=[checkpoint, csv_logger])

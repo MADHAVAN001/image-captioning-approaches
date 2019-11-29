@@ -1,6 +1,14 @@
 import os
 import yaml
+import string 
 
+def clean_tokens(sequence):
+    #To do: Handle the case where it 's get split as 2 tokens it and 's
+    table = str.maketrans('', '', string.punctuation)
+    sequence = [x.lower() for x in sequence]
+    sequence = [x.translate(table) for x in sequence]
+    sequence = [x for x in sequence if x.isalpha()]
+    return list(filter(lambda a: a not in ['', ' '], sequence))
 
 def tokenize_descriptions(input_file_path, output_file_path):
     """
@@ -21,6 +29,7 @@ def tokenize_descriptions(input_file_path, output_file_path):
         for line in file:
             if line.strip():
                 sequence = line.strip().split()
+                sequence = clean_tokens(sequence)
                 sequence.insert(1, '<START>')
                 sequence.append('<END>')
                 f.write(",".join(sequence) + "\n")
@@ -100,7 +109,7 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
 
     print("Generating word to vector encoding")
 
-    restricted_word_set = restricted_set(word_map)
+    #restricted_word_set = restricted_set(word_map)
 
     f = open(vector_encoding_file_path, 'a')
     with open(tokenized_descriptions_file_path, 'r') as file:
@@ -111,19 +120,19 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
                 vector_sequence.append(sequences[0])
 
                 for word in sequences[1:]:
-                    if word not in restricted_word_set:
-                        vector_sequence.append(str(word_map[word]))
+                    #if word not in restricted_word_set:
+                    vector_sequence.append(str(word_map[word]))
 
                 f.write(",".join(vector_sequence) + "\n")
     f.close()
     print("Finished generating word to vector encoding")
 
 
-def restricted_set(word_map, threshold_frequency=5):
-    restricted_word_set = set()
-    restricted_word_set.add('')
+# def restricted_set(word_map, threshold_frequency=5):
+#     restricted_word_set = set()
+#     restricted_word_set.add('')
 
-    return restricted_word_set
+#     return restricted_word_set
 
 
 def read_encoded_descriptions(vector_encoding_file_path):
