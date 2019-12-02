@@ -14,8 +14,13 @@ from datasets.common import get_dataset_metadata_cfg
 from preprocessing import utils
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import CSVLogger
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+from keras.backend import clear_session
+
 
 if __name__ == "__main__":
+    clear_session()
     parser = argparse.ArgumentParser(description="config")
     parser.add_argument(
         "--config",
