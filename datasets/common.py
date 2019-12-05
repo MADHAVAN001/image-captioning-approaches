@@ -98,9 +98,10 @@ def tokenize_descriptions_bert(input_file_path, output_file_path, tokenizer):
             if line.strip():
                 sequence = []
                 img_tokens = line.strip().replace(" '","'").split(" ", 1)
+                cleaned_tokens = clean_tokens(img_tokens[1:])
                 sequence.append(img_tokens[0])
                 tokens = ['[CLS]']
-                tokens.extend(tokenizer.tokenize(img_tokens[1:]))
+                tokens.extend(tokenizer.tokenize(cleaned_tokens))
                 tokens.append('[SEP]')
                 sequence.extend(tokens)
                 f.write(",".join(sequence) + "\n")        

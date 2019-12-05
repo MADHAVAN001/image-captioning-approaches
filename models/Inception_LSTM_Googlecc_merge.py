@@ -7,15 +7,18 @@ sys.path.append("..")
 import yaml
 from keras import Model
 from keras.applications.inception_v3 import InceptionV3
-from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
+from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate, Dropout, Add
 
 from datasets.googlecc import PreProcessing, get_line_count
 from datasets.common import get_dataset_metadata_cfg
 from preprocessing import utils
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import CSVLogger
+from keras.backend import clear_session
+
 
 if __name__ == "__main__":
+    clear_session()
     parser = argparse.ArgumentParser(description="config")
     parser.add_argument(
         "--config",
@@ -36,7 +39,7 @@ if __name__ == "__main__":
 
     img_model = InceptionV3(weights='imagenet')
 
-    dataset_preprocessor = PreProcessing(cfg, "inception")
+    dataset_preprocessor = PreProcessing(cfg, "inception", True, False)
     dataset_preprocessor.run_one_time_encoding(img_model)
 
     # Load train, validation sets from the pre-processor
@@ -51,14 +54,14 @@ if __name__ == "__main__":
 
     image_input = Input(shape=(2048,))
     im1 = Dropout(0.5)(image_input)
-    im2 = Dense(256, activation='relu')(fe1)
+    im2 = Dense(256, activation='relu')(im1)
 
     text_input = Input(shape=(MAX_LEN,))
     sent1 = Embedding(vocab_size, EMBEDDING_DIM, mask_zero=True)(text_input)
     sent2 = Dropout(0.5)(sent1)
     sent3 = LSTM(256)(sent2)
 
-    decoder1 = add([im2, sent3])
+    decoder1 = Add()([im2, sent3])
     decoder2 = Dense(256, activation='relu')(decoder1)
     pred = Dense(vocab_size, activation='softmax')(decoder2)
 

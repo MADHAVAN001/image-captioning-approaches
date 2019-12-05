@@ -1,0 +1,18 @@
+model:
+    arch: inception_lstm_merge
+dataset:
+    name: google-cc-10k-preprocessed2
+
+language:
+    max_sentence_length: 40
+    embedding_dimension: 300
+
+training:
+    batch_size: 40
+    epochs: 40
+
+validation:
+    batch_size: 40
+
+workspace:
+    directory: '/workspace/'
