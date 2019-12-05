@@ -66,11 +66,11 @@ def tokenize_descriptions_with_threshold(input_file_path, output_file_path):
                 sequence.insert(1, '<START>')
                 sequence.append('<END>')
                 sequences.append(sequence)
-                for w in sequence:
+                for w in sequence[1:]:
                     word_counts[w] = word_counts.get(w, 0) + 1
         vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold]
         for sequence in sequences:
-            sequence = ['<UNK>' if x not in vocab else x for x in sequence]
+            sequence[1:] = ['<UNK>' if x not in vocab else x for x in sequence[1:]]
             f.write(",".join(sequence) + "\n")        
     f.close()
     print("Finished generating tokenized descriptions")

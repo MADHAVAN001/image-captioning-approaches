@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     img_model = InceptionV3(weights='imagenet')
 
-    dataset_preprocessor = PreProcessing(cfg, "inception")
+    dataset_preprocessor = PreProcessing(cfg, "inception", False, False)
     dataset_preprocessor.run_one_time_encoding(img_model)
 
     # Load train, validation sets from the pre-processor
