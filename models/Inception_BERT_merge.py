@@ -50,9 +50,7 @@ if __name__ == "__main__":
     MAX_LEN = 40
     EMBEDDING_DIM = 300
     IMAGE_ENC_DIM = 300
-    vocab_size = get_line_count(
-        os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], "word_dictionary.txt")
-    )
+    vocab_size = 30522
 
 
     BERT_MODEL_HUB = "https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1"

@@ -1,7 +1,7 @@
 model:
     arch: inception_bert
 dataset:
-    name: google-cc-10k
+    name: google-cc-10k-preprocessed-bert
 
 language:
     max_sentence_length: 40

@@ -98,10 +98,11 @@ def tokenize_descriptions_bert(input_file_path, output_file_path, tokenizer):
             if line.strip():
                 sequence = []
                 img_tokens = line.strip().replace(" '","'").split(" ", 1)
-                cleaned_tokens = clean_tokens(img_tokens[1:])
+                print(img_tokens)
+                #cleaned_tokens = clean_tokens(img_tokens[1])
                 sequence.append(img_tokens[0])
                 tokens = ['[CLS]']
-                tokens.extend(tokenizer.tokenize(cleaned_tokens))
+                tokens.extend(tokenizer.tokenize(img_tokens[1]))
                 tokens.append('[SEP]')
                 sequence.extend(tokens)
                 f.write(",".join(sequence) + "\n")        
@@ -209,8 +210,9 @@ def vector_encode_descriptions_bert(tokenized_descriptions_file_path, vector_enc
                 sequences = line.strip().split(",")
                 vector_sequence = list()
                 vector_sequence.append(sequences[0])
-                vector_sequence.extend(tokenizer.convert_tokens_to_ids(sequences[1:]))
-                f.write(",".join(vector_sequence) + "\n")
+                tokens = [x for x in sequences[1:] if x != '']
+                vector_sequence.extend(tokenizer.convert_tokens_to_ids(tokens))
+                f.write(",".join(str(v) for v in vector_sequence) + "\n")
     f.close()
     print("Finished generating word to vector encoding")
 

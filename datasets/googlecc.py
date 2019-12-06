@@ -207,7 +207,10 @@ class EncodedGoogleDataGenerator(Sequence):
         self.image_encoding = np.load(image_encoding_file_path)
         self.previous_line_number = 0
         self.max_sentence_len = 40
-        self.vocab_size = get_line_count(word_dictionary_file_path)
+        if is_bert:
+            self.vocab_size = 30522
+        else:
+            self.vocab_size = get_line_count(word_dictionary_file_path)
         self.is_bert = is_bert
 
     def __len__(self):
@@ -280,7 +283,10 @@ class ImageGoogleDataGenerator(Sequence):
         self.data_list = retrieve_data_list_file(run_type)
         self.previous_line_number = 0
         self.max_sentence_len = 40
-        self.vocab_size = get_line_count(word_dictionary_file_path)
+        if is_bert:
+            self.vocab_size = 30522
+        else:
+            self.vocab_size = get_line_count(word_dictionary_file_path)
         self.dataset_directory = dataset_directory
 
     def __len__(self):
