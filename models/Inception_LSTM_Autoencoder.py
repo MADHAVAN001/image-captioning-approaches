@@ -34,7 +34,7 @@ if __name__ == "__main__":
     model_workspace_dir = os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], cfg["model"]["arch"])
     utils.make_directories(model_workspace_dir)
 
-    dataset_preprocessor = PreProcessing(cfg, "autoencoder")
+    dataset_preprocessor = PreProcessing(cfg, "autoencoder", False, False)
 
     # Load train, validation sets from the pre-processor
     training_generator, validation_generator, test_generator = dataset_preprocessor.get_simple_keras_generators()
