@@ -8,15 +8,15 @@ import yaml
 from tensorflow.keras import Model
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from datasets.googlecc import PreProcessing, get_line_count
 from datasets.common import get_dataset_metadata_cfg
 from preprocessing import utils
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
-import tensorflow as tf
-from tensorflow.keras.backend.tensorflow_backend import set_session
 from tensorflow.keras.backend import clear_session
+from utils.performance import PerformanceMetrics
 
 
 if __name__ == "__main__":
@@ -69,11 +69,22 @@ if __name__ == "__main__":
 
     model.summary()
 
-    checkpoint = ModelCheckpoint(filepath=os.path.join(model_workspace_dir, 'weights.hdf5'),
-                                 verbose=1,
-                                 save_best_only=True)
+    callbacks = [
+        EarlyStopping(patience=10, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        ModelCheckpoint(
+            os.path.join(os.path.join(model_workspace_dir, 'weights_best.hdf5')),
+            verbose=1,
+            save_best_only=False,
+            save_weights_only=True
+        ),
+        CSVLogger(os.path.join(model_workspace_dir, 'training.csv')),
+        PerformanceMetrics(os.path.join(model_workspace_dir, 'performance.csv')),
+    ]
 
-    csv_logger = CSVLogger(os.path.join(model_workspace_dir, 'training.log'), append=True)
-
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=100,
-                        callbacks=[checkpoint, csv_logger])
+    model.fit_generator(
+        generator=training_generator,
+        validation_data=validation_generator,
+        epochs=100,
+        callbacks=callbacks
+    )

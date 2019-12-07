@@ -1,7 +1,7 @@
 model:
     arch: inception_lstm_merge
 dataset:
-    name: google-cc-10k-preprocessed1
+    name: google-cc-100k-preprocessed1
 
 language:
     max_sentence_length: 40
