@@ -1,6 +1,6 @@
 import numpy as np
-from keras.utils import Sequence, to_categorical
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.utils import Sequence, to_categorical
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 import os
 import cv2
 from cnn.Encoder import encoder_model
@@ -62,7 +62,8 @@ class PreProcessing:
                 bert_module = hub.Module(BERT_MODEL_HUB)
                 tokenization_info = bert_module(signature="tokenization_info", as_dict=True)
                 with tf.compat.v1.Session() as sess:
-                    vocab_file, do_lower_case = sess.run([tokenization_info["vocab_file"],tokenization_info["do_lower_case"]])  
+                    vocab_file, do_lower_case = tokenization_info["vocab_file"],tokenization_info["do_lower_case"]
+                    print("vocab", vocab_file)
             tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
             tokenize_descriptions_bert(self.processed_descriptions_file_path, self.tokenized_descriptions_file_path, tokenizer)
             vector_encode_descriptions_bert(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, tokenizer)
@@ -86,6 +87,7 @@ class PreProcessing:
         return read_encoded_descriptions(self.vector_encoding_file_path)
 
     def get_keras_generators(self, unique_id):
+        print("okay getting generator")
         return EncodedGoogleDataGenerator(self.cfg, "train", self.vector_encoding_file_path,
                                           self.calculate_image_encoding_file_path(unique_id, "train"),
                                           self.word_dictionary_file_path, self.is_bert), \
@@ -245,9 +247,9 @@ class EncodedGoogleDataGenerator(Sequence):
                         padding='post'
                     )[0]
                     if self.is_bert:
-                        segment_ids = [0] * max_sentence_len
+                        segment_ids = [0] * self.max_sentence_len
                         input_mask = [1] * j 
-                        padding_mask = [0] * (max_sentence_len - j)
+                        padding_mask = [0] * (self.max_sentence_len - j)
                         input_mask.extend(padding_mask)
 
                     output_word_sequence = to_categorical(
@@ -264,6 +266,8 @@ class EncodedGoogleDataGenerator(Sequence):
                 index += 1
 
         if self.is_bert:
+            #print("bert inputs")
+            #print(batch_images, batch_word_sequences, batch_input_mask, batch_segment_ids)
             return [np.array(batch_images), np.array(batch_word_sequences), np.array(batch_input_mask), np.array(batch_segment_ids)], np.array(batch_output)
         return [np.array(batch_images), np.array(batch_word_sequences)], np.array(batch_output)
 
