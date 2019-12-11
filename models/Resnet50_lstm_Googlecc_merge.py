@@ -6,7 +6,7 @@ sys.path.append("..")
 
 import yaml
 from tensorflow.keras import Model
-from tensorflow.keras.applications.inception_v3 import ResNet50
+from tensorflow.keras.applications.resnet import ResNet50
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
