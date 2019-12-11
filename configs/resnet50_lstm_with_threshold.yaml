@@ -1,0 +1,18 @@
+model:
+    arch: resnet50_lstm_with_threshold
+dataset:
+    name: google-cc-100k-with-threshold
+
+language:
+    max_sentence_length: 40
+    embedding_dimension: 300
+
+training:
+    batch_size: 40
+    epochs: 40
+
+validation:
+    batch_size: 40
+
+workspace:
+    directory: '/workspace/'

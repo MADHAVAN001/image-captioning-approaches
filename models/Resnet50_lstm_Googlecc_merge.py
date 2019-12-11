@@ -6,8 +6,8 @@ sys.path.append("..")
 
 import yaml
 from tensorflow.keras import Model
-from tensorflow.keras.applications.inception_v3 import InceptionV3
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate, Dropout, Add
+from tensorflow.keras.applications.inception_v3 import ResNet50
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from datasets.googlecc import PreProcessing, get_line_count
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm_preprocessed1.yaml",
+        default="../configs/resnet50_lstm_no_threshold.yaml",
         help="Configuration file to use",
     )
 
@@ -39,13 +39,13 @@ if __name__ == "__main__":
     model_workspace_dir = os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], cfg["model"]["arch"])
     utils.make_directories(model_workspace_dir)
 
-    img_model = InceptionV3(weights='imagenet')
+    img_model = ResNet50(weights='imagenet')
 
-    dataset_preprocessor = PreProcessing(cfg, "inception", True, False)
+    dataset_preprocessor = PreProcessing(cfg, "resnet50", True, False)
     dataset_preprocessor.run_one_time_encoding(img_model)
 
     # Load train, validation sets from the pre-processor
-    training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
+    training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("resnet50")
 
     MAX_LEN = 40
     EMBEDDING_DIM = 300
@@ -54,20 +54,17 @@ if __name__ == "__main__":
         os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], "word_dictionary.txt")
     )
 
-    image_input = Input(shape=(2048,))
-    im1 = Dropout(0.5)(image_input)
-    im2 = Dense(256, activation='relu')(im1)
+    img_input = Input(shape=(2048,))
+    img_enc = Dense(300, activation="relu")(img_input)
+    images = RepeatVector(MAX_LEN)(img_enc)
 
+    # Text input
     text_input = Input(shape=(MAX_LEN,))
-    sent1 = Embedding(vocab_size, EMBEDDING_DIM, mask_zero=True)(text_input)
-    sent2 = Dropout(0.5)(sent1)
-    sent3 = LSTM(256)(sent2)
-
-    decoder1 = Add()([im2, sent3])
-    decoder2 = Dense(256, activation='relu')(decoder1)
-    pred = Dense(vocab_size, activation='softmax')(decoder2)
-
-    model = Model(inputs=[image_input, text_input], outputs=pred)
+    embedding = Embedding(vocab_size, EMBEDDING_DIM, input_length=MAX_LEN)(text_input)
+    x = Concatenate()([images, embedding])
+    y = Bidirectional(LSTM(256, return_sequences=False))(x)
+    pred = Dense(vocab_size, activation='softmax')(y)
+    model = Model(inputs=[img_input, text_input], outputs=pred)
     model.compile(loss='categorical_crossentropy', optimizer="RMSProp", metrics=['accuracy'])
 
     model.summary()

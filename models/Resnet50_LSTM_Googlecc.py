@@ -6,7 +6,7 @@ sys.path.append("..")
 
 import yaml
 from tensorflow.keras import Model
-from tensorflow.keras.applications.inception_v3 import InceptionV3
+from tensorflow.keras.applications.inception_v3 import ResNet50
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate, Dropout, Add
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm_preprocessed1.yaml",
+        default="../configs/resnet50_lstm_no_threshold.yaml",
         help="Configuration file to use",
     )
 
@@ -39,13 +39,13 @@ if __name__ == "__main__":
     model_workspace_dir = os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], cfg["model"]["arch"])
     utils.make_directories(model_workspace_dir)
 
-    img_model = InceptionV3(weights='imagenet')
+    img_model = ResNet50(weights='imagenet')
 
-    dataset_preprocessor = PreProcessing(cfg, "inception", True, False)
+    dataset_preprocessor = PreProcessing(cfg, "resnet50", True, False)
     dataset_preprocessor.run_one_time_encoding(img_model)
 
     # Load train, validation sets from the pre-processor
-    training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
+    training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("resnet50")
 
     MAX_LEN = 40
     EMBEDDING_DIM = 300

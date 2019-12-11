@@ -2,16 +2,26 @@ import os
 import yaml
 import string 
 
+
 def clean_tokens(sequence):
+    """
+    This function removes the following:
+     1. All empty tokens
+     2. Remove punctuations from the words
+    :param sequence:
+    :return:
+    """
     table = str.maketrans('', '', string.punctuation)
     sequence = [x.lower() for x in sequence]
     sequence = [x.translate(table) for x in sequence]
     sequence = [x for x in sequence if x.isalpha()]
     return list(filter(lambda a: a not in ['', ' '], sequence))
 
+
 def clean_tokens_keep_nonalpha(sequence):
     sequence = [x.lower() for x in sequence]
     return list(filter(lambda a: a not in ['', ' '], sequence))
+
 
 def tokenize_descriptions(input_file_path, output_file_path):
     """
@@ -75,6 +85,7 @@ def tokenize_descriptions_with_threshold(input_file_path, output_file_path):
     f.close()
     print("Finished generating tokenized descriptions")
 
+
 def tokenize_descriptions_bert(input_file_path, output_file_path, tokenizer):
     """
     Expects the file to be in a format where each line is of the format "<file_name> tokenized caption"
@@ -108,6 +119,7 @@ def tokenize_descriptions_bert(input_file_path, output_file_path, tokenizer):
                 f.write(",".join(sequence) + "\n")        
     f.close()
     print("Finished generating tokenized descriptions")
+
 
 def create_word_map(tokenized_descriptions_file_path, word_dictionary_output_path):
     """
@@ -190,12 +202,12 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
                 vector_sequence.append(sequences[0])
 
                 for word in sequences[1:]:
-                    #if word not in restricted_word_set:
                     vector_sequence.append(str(word_map[word]))
 
                 f.write(",".join(vector_sequence) + "\n")
     f.close()
     print("Finished generating word to vector encoding")
+
 
 def vector_encode_descriptions_bert(tokenized_descriptions_file_path, vector_encoding_file_path, tokenizer):
     if os.path.exists(vector_encoding_file_path):
