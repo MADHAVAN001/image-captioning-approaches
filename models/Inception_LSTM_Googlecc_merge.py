@@ -7,7 +7,8 @@ sys.path.append("..")
 import yaml
 from tensorflow.keras import Model
 from tensorflow.keras.applications.inception_v3 import InceptionV3
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate, Dropout, Add
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from datasets.googlecc import PreProcessing, get_line_count
 from datasets.common import get_dataset_metadata_cfg
@@ -15,6 +16,7 @@ from preprocessing import utils
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
 from tensorflow.keras.backend import clear_session
+from utils.performance import PerformanceMetrics
 
 
 if __name__ == "__main__":
@@ -24,7 +26,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/inception_lstm_preprocessed1.yaml",
+        default="../configs/inception_lstm_preprocessed2.yaml",
         help="Configuration file to use",
     )
 
@@ -52,29 +54,37 @@ if __name__ == "__main__":
         os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"], "word_dictionary.txt")
     )
 
-    image_input = Input(shape=(2048,))
-    im1 = Dropout(0.5)(image_input)
-    im2 = Dense(256, activation='relu')(im1)
+    img_input = Input(shape=(2048,))
+    img_enc = Dense(300, activation="relu")(img_input)
+    images = RepeatVector(MAX_LEN)(img_enc)
 
+    # Text input
     text_input = Input(shape=(MAX_LEN,))
-    sent1 = Embedding(vocab_size, EMBEDDING_DIM, mask_zero=True)(text_input)
-    sent2 = Dropout(0.5)(sent1)
-    sent3 = LSTM(256)(sent2)
-
-    decoder1 = Add()([im2, sent3])
-    decoder2 = Dense(256, activation='relu')(decoder1)
-    pred = Dense(vocab_size, activation='softmax')(decoder2)
-
-    model = Model(inputs=[image_input, text_input], outputs=pred)
+    embedding = Embedding(vocab_size, EMBEDDING_DIM, input_length=MAX_LEN)(text_input)
+    x = Concatenate()([images, embedding])
+    y = Bidirectional(LSTM(256, return_sequences=False))(x)
+    pred = Dense(vocab_size, activation='softmax')(y)
+    model = Model(inputs=[img_input, text_input], outputs=pred)
     model.compile(loss='categorical_crossentropy', optimizer="RMSProp", metrics=['accuracy'])
 
     model.summary()
 
-    checkpoint = ModelCheckpoint(filepath=os.path.join(model_workspace_dir, 'weights.hdf5'),
-                                 verbose=1,
-                                 save_best_only=True)
+    callbacks = [
+        EarlyStopping(patience=10, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        ModelCheckpoint(
+            os.path.join(os.path.join(model_workspace_dir, 'weights_best.hdf5')),
+            verbose=1,
+            save_best_only=False,
+            save_weights_only=True
+        ),
+        CSVLogger(os.path.join(model_workspace_dir, 'training.csv')),
+        PerformanceMetrics(os.path.join(model_workspace_dir, 'performance.csv')),
+    ]
 
-    csv_logger = CSVLogger(os.path.join(model_workspace_dir, 'training.log'), append=True)
-
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=100,
-                        callbacks=[checkpoint, csv_logger])
+    model.fit_generator(
+        generator=training_generator,
+        validation_data=validation_generator,
+        epochs=100,
+        callbacks=callbacks
+    )

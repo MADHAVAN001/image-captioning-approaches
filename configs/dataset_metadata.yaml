@@ -9,9 +9,9 @@ data:
         dataset_path: '/flickr_8k/Flicker8k_Dataset'
     googlecc:
         dataset: googlecc
-        index_file: '/dataset/google-cc/10k/images/index_file.txt'
-        train_images_file: '/dataset/google-cc/10k/trainImages.txt'
-        test_images_file: '/dataset/google-cc/10k/testImages.txt'
-        validation_images_file: '/dataset/google-cc/10k/validationImages.txt'
+        index_file: '/dataset/google-cc/100k/images/index_file.txt'
+        train_images_file: '/dataset/google-cc/100k/trainImages.txt'
+        test_images_file: '/dataset/google-cc/100k/testImages.txt'
+        validation_images_file: '/dataset/google-cc/100k/validationImages.txt'
         descriptions: '/dataset/google-cc/train_GCC-training.tsv'
-        dataset_path: '/dataset/google-cc/10k/images'
+        dataset_path: '/dataset/google-cc/100k/images'

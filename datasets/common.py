@@ -1,6 +1,17 @@
 import os
 import yaml
+import string 
 
+def clean_tokens(sequence):
+    table = str.maketrans('', '', string.punctuation)
+    sequence = [x.lower() for x in sequence]
+    sequence = [x.translate(table) for x in sequence]
+    sequence = [x for x in sequence if x.isalpha()]
+    return list(filter(lambda a: a not in ['', ' '], sequence))
+
+def clean_tokens_keep_nonalpha(sequence):
+    sequence = [x.lower() for x in sequence]
+    return list(filter(lambda a: a not in ['', ' '], sequence))
 
 def tokenize_descriptions(input_file_path, output_file_path):
     """
@@ -20,13 +31,83 @@ def tokenize_descriptions(input_file_path, output_file_path):
     with open(input_file_path, 'r') as file:
         for line in file:
             if line.strip():
-                sequence = line.strip().split()
+                sequence = line.strip().replace(" '","'").split()
+                sequence[1:] = clean_tokens(sequence[1:])
                 sequence.insert(1, '<START>')
                 sequence.append('<END>')
                 f.write(",".join(sequence) + "\n")
     f.close()
     print("Finished generating tokenized descriptions")
 
+
+def tokenize_descriptions_with_threshold(input_file_path, output_file_path):
+    """
+    Expects the file to be in a format where each line is of the format "<file_name> tokenized caption"
+    Converts this and saves an output file where each line contains "<file_name>,<START>,tokenized,caption,<END>"
+    and saves it in the directory mentioned under cfg["workspace"]["directory"]
+    :param input_file_path:
+    :param output_file_path:
+    :return:
+    """
+    if os.path.exists(output_file_path):
+        print("Tokenized descriptions found. Will not be generated.")
+        return
+
+    print("Generating tokenized descriptions")
+    f = open(output_file_path, 'a')
+    with open(input_file_path, 'r') as file:
+        word_count_threshold = 4
+        word_counts = {}
+        sequences = []
+        for line in file:
+            if line.strip():
+                sequence = line.strip().replace(" '","'").split()
+                sequence[1:] = clean_tokens(sequence[1:])
+                sequence.insert(1, '<START>')
+                sequence.append('<END>')
+                sequences.append(sequence)
+                for w in sequence[1:]:
+                    word_counts[w] = word_counts.get(w, 0) + 1
+        vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold]
+        for sequence in sequences:
+            sequence[1:] = ['<UNK>' if x not in vocab else x for x in sequence[1:]]
+            f.write(",".join(sequence) + "\n")        
+    f.close()
+    print("Finished generating tokenized descriptions")
+
+def tokenize_descriptions_bert(input_file_path, output_file_path, tokenizer):
+    """
+    Expects the file to be in a format where each line is of the format "<file_name> tokenized caption"
+    Converts this and saves an output file where each line contains "<file_name>,<START>,tokenized,caption,<END>"
+    and saves it in the directory mentioned under cfg["workspace"]["directory"]
+    :param input_file_path:
+    :param output_file_path:
+    :return:
+    """
+    if os.path.exists(output_file_path):
+        print("Tokenized descriptions found. Will not be generated.")
+        return
+
+    print("Generating tokenized descriptions")
+    f = open(output_file_path, 'a')
+    with open(input_file_path, 'r') as file:
+        word_count_threshold = 10
+        word_counts = {}
+        sequences = []
+        for line in file:
+            if line.strip():
+                sequence = []
+                img_tokens = line.strip().replace(" '","'").split(" ", 1)
+                print(img_tokens)
+                #cleaned_tokens = clean_tokens(img_tokens[1])
+                sequence.append(img_tokens[0])
+                tokens = ['[CLS]']
+                tokens.extend(tokenizer.tokenize(img_tokens[1]))
+                tokens.append('[SEP]')
+                sequence.extend(tokens)
+                f.write(",".join(sequence) + "\n")        
+    f.close()
+    print("Finished generating tokenized descriptions")
 
 def create_word_map(tokenized_descriptions_file_path, word_dictionary_output_path):
     """
@@ -100,8 +181,6 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
 
     print("Generating word to vector encoding")
 
-    restricted_word_set = restricted_set(word_map)
-
     f = open(vector_encoding_file_path, 'a')
     with open(tokenized_descriptions_file_path, 'r') as file:
         for line in file:
@@ -111,19 +190,31 @@ def vector_encode_descriptions(tokenized_descriptions_file_path, vector_encoding
                 vector_sequence.append(sequences[0])
 
                 for word in sequences[1:]:
-                    if word not in restricted_word_set:
-                        vector_sequence.append(str(word_map[word]))
+                    #if word not in restricted_word_set:
+                    vector_sequence.append(str(word_map[word]))
 
                 f.write(",".join(vector_sequence) + "\n")
     f.close()
     print("Finished generating word to vector encoding")
 
+def vector_encode_descriptions_bert(tokenized_descriptions_file_path, vector_encoding_file_path, tokenizer):
+    if os.path.exists(vector_encoding_file_path):
+        print("Vector encoding found. Will not be generated.")
+        return
 
-def restricted_set(word_map, threshold_frequency=5):
-    restricted_word_set = set()
-    restricted_word_set.add('')
-
-    return restricted_word_set
+    print("Generating word to vector encoding")
+    f = open(vector_encoding_file_path, 'a')
+    with open(tokenized_descriptions_file_path, 'r') as file:
+        for line in file:
+            if line.strip():
+                sequences = line.strip().split(",")
+                vector_sequence = list()
+                vector_sequence.append(sequences[0])
+                tokens = [x for x in sequences[1:] if x != '']
+                vector_sequence.extend(tokenizer.convert_tokens_to_ids(tokens))
+                f.write(",".join(str(v) for v in vector_sequence) + "\n")
+    f.close()
+    print("Finished generating word to vector encoding")
 
 
 def read_encoded_descriptions(vector_encoding_file_path):
