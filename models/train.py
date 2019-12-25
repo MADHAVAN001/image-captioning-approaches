@@ -63,7 +63,7 @@ if __name__ == "__main__":
         "--config",
         nargs="?",
         type=str,
-        default="../configs/resnet50_lstm_no_threshold.yaml",
+        default="../configs/resnet_lstm_inject_no_threshold.yaml",
         help="Configuration file to use",
     )
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     model_workspace_dir = os.path.join(
         cfg["workspace"]["directory"],
         cfg["dataset"]["name"],
-        cfg["model"]["arch"]
+        cfg["model"]["name"]
     )
 
     # Ensure the directory exists
