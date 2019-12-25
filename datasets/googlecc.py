@@ -1,16 +1,15 @@
-import numpy as np
-from tensorflow.keras.utils import Sequence, to_categorical
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-import os
-import cv2
-from cnn.Encoder import encoder_model
 import itertools
-from bert import tokenization
-import tensorflow_hub as hub
-import tensorflow as tf
+import os
+
+import cv2
+import numpy as np
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.utils import Sequence, to_categorical
+
+from cnn.Encoder import encoder_model
 from datasets.common import get_dataset_metadata_cfg, tokenize_descriptions, vector_encode_descriptions, \
-    read_encoded_descriptions, read_id_to_word_dictionary, read_word_dictionary, create_word_map, tokenize_descriptions_bert, \
-    tokenize_descriptions_with_threshold, vector_encode_descriptions_bert
+    read_encoded_descriptions, read_id_to_word_dictionary, read_word_dictionary, create_word_map, \
+    tokenize_descriptions_with_threshold
 
 tokenized_descriptions = 'tokenized_descriptions.txt'
 word_dictionary = 'word_dictionary.txt'
@@ -37,7 +36,7 @@ def get_line_count(file):
 
 class PreProcessing:
 
-    def __init__(self, cfg, unique_id, apply_threshold, is_bert):
+    def __init__(self, cfg, unique_id, shape):
         self.dataset_cfg = get_dataset_metadata_cfg()
 
         self.workspace_dir = os.path.join(cfg["workspace"]["directory"], cfg["dataset"]["name"])
@@ -48,34 +47,29 @@ class PreProcessing:
         self.processed_descriptions_file_path = os.path.join(self.workspace_dir, index_replaced_file)
         self.index_file = self.dataset_cfg["data"]["googlecc"]["index_file"]
         self.dataset_path = self.dataset_cfg["data"]["googlecc"]["dataset_path"]
+        self.apply_dataset_threshold = cfg["dataset"]["is_threshold"]
         self.cfg = cfg
+        self.shape = shape
         self.unique_id = unique_id
-        self.is_bert = is_bert
 
         # Prepare the dataset processing original descriptions to new descriptions
         self.prepare_dataset()
         self.train_test_split()
 
-        if is_bert:
-            BERT_MODEL_HUB = "https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1"
-            with tf.Graph().as_default():
-                bert_module = hub.Module(BERT_MODEL_HUB)
-                tokenization_info = bert_module(signature="tokenization_info", as_dict=True)
-                with tf.compat.v1.Session() as sess:
-                    vocab_file, do_lower_case = tokenization_info["vocab_file"],tokenization_info["do_lower_case"]
-                    print("vocab", vocab_file)
-            tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
-            tokenize_descriptions_bert(self.processed_descriptions_file_path, self.tokenized_descriptions_file_path, tokenizer)
-            vector_encode_descriptions_bert(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, tokenizer)
+        if self.apply_dataset_threshold:
+            tokenize_descriptions_with_threshold(
+                self.processed_descriptions_file_path,
+                self.tokenized_descriptions_file_path
+            )
         else:
-            if apply_threshold:
-                tokenize_descriptions_with_threshold(self.processed_descriptions_file_path, self.tokenized_descriptions_file_path)
-            else:
-                tokenize_descriptions(self.processed_descriptions_file_path, self.tokenized_descriptions_file_path)
+            tokenize_descriptions(
+                self.processed_descriptions_file_path,
+                self.tokenized_descriptions_file_path
+            )
         
-            create_word_map(self.tokenized_descriptions_file_path, self.word_dictionary_file_path)
-            word_map = read_word_dictionary(self.word_dictionary_file_path)
-            vector_encode_descriptions(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, word_map)
+        create_word_map(self.tokenized_descriptions_file_path, self.word_dictionary_file_path)
+        word_map = read_word_dictionary(self.word_dictionary_file_path)
+        vector_encode_descriptions(self.tokenized_descriptions_file_path, self.vector_encoding_file_path, word_map)
 
     def get_word_dictionary(self):
         return read_word_dictionary(self.word_dictionary_file_path)
@@ -86,20 +80,20 @@ class PreProcessing:
     def get_vector_encodings(self):
         return read_encoded_descriptions(self.vector_encoding_file_path)
 
-    def get_keras_generators(self, unique_id):
+    def get_encoding_keras_generators(self, unique_id):
         print("okay getting generator")
         return EncodedGoogleDataGenerator(self.cfg, "train", self.vector_encoding_file_path,
                                           self.calculate_image_encoding_file_path(unique_id, "train"),
-                                          self.word_dictionary_file_path, self.is_bert), \
+                                          self.word_dictionary_file_path), \
                EncodedGoogleDataGenerator(self.cfg, "validation", self.vector_encoding_file_path,
                                           self.calculate_image_encoding_file_path(unique_id, "validation"),
-                                          self.word_dictionary_file_path, self.is_bert), \
+                                          self.word_dictionary_file_path), \
                EncodedGoogleDataGenerator(self.cfg, "test",
                                           self.vector_encoding_file_path,
                                           self.calculate_image_encoding_file_path(unique_id, "test"),
-                                          self.word_dictionary_file_path, self.is_bert)
+                                          self.word_dictionary_file_path)
 
-    def get_simple_keras_generators(self):
+    def get_image_keras_generators(self):
         return ImageGoogleDataGenerator(self.cfg, "train",
                                         self.vector_encoding_file_path,
                                         self.word_dictionary_file_path,
@@ -195,7 +189,7 @@ class PreProcessing:
 
 class EncodedGoogleDataGenerator(Sequence):
 
-    def __init__(self, cfg, run_type, vector_encoding_file_path, image_encoding_file_path, word_dictionary_file_path, is_bert = False):
+    def __init__(self, cfg, run_type, vector_encoding_file_path, image_encoding_file_path, word_dictionary_file_path):
 
         if run_type == "train":
             self.batch_size = cfg["training"]["batch_size"]
@@ -209,11 +203,7 @@ class EncodedGoogleDataGenerator(Sequence):
         self.image_encoding = np.load(image_encoding_file_path)
         self.previous_line_number = 0
         self.max_sentence_len = 40
-        if is_bert:
-            self.vocab_size = 30522
-        else:
-            self.vocab_size = get_line_count(word_dictionary_file_path)
-        self.is_bert = is_bert
+        self.vocab_size = get_line_count(word_dictionary_file_path)
 
     def __len__(self):
         return int(np.ceil(get_line_count(self.data_list) / float(self.batch_size)))
@@ -223,9 +213,6 @@ class EncodedGoogleDataGenerator(Sequence):
         batch_images = list()
         batch_word_sequences = list()
         batch_output = list()
-        if self.is_bert:
-            batch_segment_ids = list()
-            batch_input_mask = list()
 
         with open(self.data_list) as f:
             result = itertools.islice(f, idx * self.batch_size, (idx + 1) * self.batch_size)
@@ -246,11 +233,6 @@ class EncodedGoogleDataGenerator(Sequence):
                         maxlen=self.max_sentence_len,
                         padding='post'
                     )[0]
-                    if self.is_bert:
-                        segment_ids = [0] * self.max_sentence_len
-                        input_mask = [1] * j 
-                        padding_mask = [0] * (self.max_sentence_len - j)
-                        input_mask.extend(padding_mask)
 
                     output_word_sequence = to_categorical(
                         [int(output_word_sequence)],
@@ -260,15 +242,8 @@ class EncodedGoogleDataGenerator(Sequence):
                     batch_images.append(self.image_encoding[index])
                     batch_word_sequences.append(input_word_sequence)
                     batch_output.append(output_word_sequence)
-                    if self.is_bert:
-                        batch_segment_ids.append(segment_ids)
-                        batch_input_mask.append(input_mask)
                 index += 1
 
-        if self.is_bert:
-            #print("bert inputs")
-            #print(batch_images, batch_word_sequences, batch_input_mask, batch_segment_ids)
-            return [np.array(batch_images), np.array(batch_word_sequences), np.array(batch_input_mask), np.array(batch_segment_ids)], np.array(batch_output)
         return [np.array(batch_images), np.array(batch_word_sequences)], np.array(batch_output)
 
 
@@ -287,10 +262,7 @@ class ImageGoogleDataGenerator(Sequence):
         self.data_list = retrieve_data_list_file(run_type)
         self.previous_line_number = 0
         self.max_sentence_len = 40
-        if is_bert:
-            self.vocab_size = 30522
-        else:
-            self.vocab_size = get_line_count(word_dictionary_file_path)
+        self.vocab_size = get_line_count(word_dictionary_file_path)
         self.dataset_directory = dataset_directory
 
     def __len__(self):
@@ -330,7 +302,7 @@ class ImageGoogleDataGenerator(Sequence):
 
                     file_path = os.path.join(self.dataset_directory, image_file_names[index])
                     image = cv2.imread(file_path)
-                    image = np.expand_dims(np.asarray(cv2.resize(image, (299, 299))) / 255.0, axis=0)
+                    image = np.expand_dims(np.asarray(cv2.resize(image, self.shape)) / 255.0, axis=0)
 
                     batch_images.append(image)
                     batch_word_sequences.append(input_word_sequence)

@@ -1,7 +1,11 @@
 model:
-    arch: inception_lstm
+    name: inception_lstm_merge_with_threshold
+    arch_type: cnn_lstm_merge
+
 dataset:
-    name: google-cc-10k
+    name: google-cc-100k-with-threshold
+    encoding: inception
+    is_threshold: True
 
 language:
     max_sentence_length: 40

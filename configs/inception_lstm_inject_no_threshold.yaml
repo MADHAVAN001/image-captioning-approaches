@@ -1,7 +1,11 @@
 model:
-    arch: resnet50_lstm_no_threshold
+    name: inception_lstm_inject_no_threshold
+    arch_type: cnn_lstm_inject
+
 dataset:
     name: google-cc-100k-no-threshold
+    encoding: inception
+    is_threshold: False
 
 language:
     max_sentence_length: 40
