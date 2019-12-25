@@ -1,19 +1,19 @@
 import argparse
 import os
 import sys
+
 sys.path.append("..")
 import language.decoder
 
 import yaml
-from keras import Model, models
-from keras.applications.inception_v3 import InceptionV3
-from keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
-
-from datasets.flickr import tokenize_descriptions, encode_images, get_line_count, \
-    FlickrDataGenerator
+from tensorflow.keras import Model
+from tensorflow.keras.applications.inception_v3 import InceptionV3
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Input, Bidirectional, RepeatVector, Concatenate
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+from utils.performance import PerformanceMetrics
+from datasets.flickr import tokenize_descriptions, encode_images, get_line_count
 
 import datasets.flickr
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="config")
@@ -60,21 +60,35 @@ if __name__ == "__main__":
 
     training_generator, validation_generator, test_generator = dataset_preprocessor.get_keras_generators("inception")
 
-    model.fit_generator(generator=training_generator, validation_data=validation_generator, epochs=1)
+    callbacks = [
+        EarlyStopping(patience=10, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        ModelCheckpoint(
+            os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"] + "_model_best.h5"),
+            verbose=1,
+            save_best_only=False,
+            save_weights_only=True
+        ),
+        CSVLogger(cfg["csv_logger_path"]),
+        PerformanceMetrics(cfg["performance_logger_path"]),
+    ]
 
-    model.save_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
-    print("Saved model to disk")
-    
-    model.load_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"]+"_model.h5"))
+    model.fit_generator(
+        generator=training_generator,
+        validation_data=validation_generator,
+        callbacks=callbacks,
+        epochs=1
+    )
 
+    model.load_weights(os.path.join(cfg["workspace"]["directory"], cfg["model"]["arch"] + "_model_best.h5"))
     length_test_file = get_line_count(cfg["data"]["flickr"]["test_images_file"])
     f = open(os.path.join(cfg["workspace"]["directory"], "test_output.txt"), 'a')
     for i in range(0, length_test_file):
         x, y = test_generator[i]
         sentence = language.decoder.greedy_decoder(
-                    model,
-                    x[0][0],
-                    dataset_preprocessor.get_word_dictionary(),
-                    dataset_preprocessor.get_id_dictionary(),
-                    40)
+            model,
+            x[0][0],
+            dataset_preprocessor.get_word_dictionary(),
+            dataset_preprocessor.get_id_dictionary(),
+            40)
         f.write(" ".join(sentence[1:-1]) + "\n")

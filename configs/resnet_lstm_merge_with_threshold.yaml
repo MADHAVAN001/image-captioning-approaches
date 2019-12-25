@@ -1,7 +1,11 @@
 model:
-    arch: resnet50_lstm_with_threshold
+    name: resnet_lstm_merge_with_threshold
+    arch_type: cnn_lstm_merge
+
 dataset:
     name: google-cc-100k-with-threshold
+    encoding: resnet50
+    is_threshold: True
 
 language:
     max_sentence_length: 40
