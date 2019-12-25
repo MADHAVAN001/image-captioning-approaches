@@ -148,7 +148,7 @@ class PreProcessing:
         with open(data_list, 'r') as file:
             for line in file:
                 image = cv2.imread(os.path.join(self.dataset_path, line.strip()))
-                image = np.expand_dims(np.asarray(cv2.resize(image, (299, 299))) / 255.0, axis=0)
+                image = np.expand_dims(np.asarray(cv2.resize(image, self.shape)) / 255.0, axis=0)
                 yield image
 
     def calculate_image_encoding_file_path(self, unique_id, run_type):
